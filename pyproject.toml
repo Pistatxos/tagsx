@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tagsx"
+dynamic = ["version"]
+description = "Inventario y edición de etiquetas de AWS: en la terminal (CSV/Excel) o en una web local."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Mariox", email = "info@tomonota.net" }]
+keywords = ["aws", "tags", "tagging", "boto3", "inventario"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Natural Language :: Spanish",
+]
+dependencies = ["boto3", "openpyxl", "flask>=2.2"]
+
+[project.scripts]
+tagsx = "tagsx.main:entry_point"
+
+[project.urls]
+Homepage = "https://github.com/Pistatxos/tagsx"
+Changelog = "https://github.com/Pistatxos/tagsx/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.setuptools.dynamic]
+version = { attr = "tagsx.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["tagsx*"]
+
+[tool.setuptools.package-data]
+"tagsx" = ["tagsx_config.py"]
+"tagsx.web" = ["templates/*.html", "static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

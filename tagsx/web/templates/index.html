@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TagsX</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2315222f%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-size=%2716%27 font-family=%27sans-serif%27 font-weight=%27700%27 fill=%27%235fd39a%27 text-anchor=%27middle%27%3EX%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="{{ url_for('static', filename='app.css', v=version) }}">
+</head>
+<body>
+<nav class="lateral" aria-label="Secciones">
+  <div class="marca">Tags<span>X</span></div>
+  <a href="#/" data-vista="etiquetas"><span class="ico">#</span>Etiquetas</a>
+  <a href="#/historial" data-vista="historial"><span class="ico">↺</span>Historial</a>
+  <a href="#/ajustes" data-vista="ajustes"><span class="ico">⚙</span>Ajustes</a>
+  <a class="lateral-donde" id="tDonde" href="#/ajustes" title="Cambiar en Ajustes">…</a>
+  <div class="lateral-pie">v{{ version }} · <a href="https://github.com/Pistatxos/tagsx" target="_blank" rel="noopener noreferrer">@pistatxos</a></div>
+</nav>
+
+<main class="contenido">
+  <!-- ============================================================ Etiquetas -->
+  <section class="vista ancha" id="vEtiquetas">
+    <header class="cab">
+      <div>
+        <h1>Etiquetas</h1>
+        <p class="una-linea" id="eFuente">Sin inventario todavía.</p>
+      </div>
+      <div class="cab-acciones">
+        <button type="button" class="secundario" id="eImportar" title="Carga un .xlsx o .csv editado: sus cambios quedan pendientes en la tabla, sin tocar AWS">Importar…</button>
+        <input type="file" id="eFichero" accept=".xlsx,.csv" hidden>
+        <a class="secundario boton" id="eExportar" href="/api/exportar?formato=xlsx" title="El inventario leído (sin los cambios pendientes), para editarlo en Excel">Exportar XLSX</a>
+        <a class="enlace" id="eExportarCsv" href="/api/exportar?formato=csv">CSV</a>
+        <button type="button" class="primario" id="eLeer" title="Lee las etiquetas de la cuenta (regiones de Ajustes + lo global)">Leer de AWS</button>
+      </div>
+    </header>
+    <div class="aviso" id="eAviso" hidden></div>
+    <section class="tarjeta lectura" id="eLectura" hidden>
+      <div class="lectura-cab"><span class="girando" aria-hidden="true"></span><b>Leyendo de AWS…</b><span class="muted">puede tardar un poco con muchos servicios</span></div>
+      <pre id="eLecturaLog"></pre>
+    </section>
+
+    <section class="tarjeta vacio-grande" id="eVacio" hidden>
+      <h2>Aún no hay inventario</h2>
+      <p>Lee las etiquetas de la cuenta para empezar. Se guarda una copia local para abrir al momento la próxima vez.</p>
+      <div class="acciones">
+        <button type="button" class="primario" id="eLeerVacio">Leer de AWS</button>
+        <label class="check"><input type="checkbox" id="eTodos"><span>Todos los servicios con escáner (más lento)</span></label>
+      </div>
+    </section>
+
+    <div id="eTrabajo" hidden>
+      <div class="cobertura" id="eCobertura" aria-label="Cobertura por etiqueta"></div>
+
+      <section class="tarjeta filtros" id="eFiltros">
+        <div class="filtros-fila">
+          <label class="campo-linea">Servicio<select id="fServicio"></select></label>
+          <label class="campo-linea" id="fEntornoCaja">Entorno<select id="fEntorno"></select></label>
+          <input type="search" id="fTexto" class="f-texto" placeholder="Nombre, ARN o valor…" title="Busca en el nombre, el id, el ARN y los valores de las etiquetas" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other">
+        </div>
+        <div class="filtros-checks">
+          <label class="check" title="Valores con mayúsculas o fuera del catálogo"><input type="checkbox" id="fAvisos"><span>Solo con avisos</span></label>
+          <label class="check" title="Lo que has editado y aún no has aplicado"><input type="checkbox" id="fCambios"><span>Solo con cambios</span></label>
+          <label class="check" title="Muestra también las columnas de etiquetas que no están en el esquema"><input type="checkbox" id="fOtras"><span>Ver las demás etiquetas</span></label>
+        </div>
+      </section>
+      <div class="activos" id="eActivos" aria-live="polite"></div>
+
+      <div class="barra" id="eBarra">
+        <div class="bloque" id="eBloque">
+          <span class="sel-info" id="eSelInfo"></span>
+          <span class="bloque-acciones">
+            <input id="bClave" class="b-clave" placeholder="Etiqueta" list="dlClaves" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other">
+            <input id="bValor" class="b-valor" placeholder="Valor" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other">
+            <button type="button" class="secundario" id="bPoner" title="Pone ese valor en la etiqueta de todo lo seleccionado">Poner valor</button>
+            <button type="button" class="secundario" id="bQuitar" title="Borra esa etiqueta de todo lo seleccionado">Quitar etiqueta</button>
+            <button type="button" class="secundario" id="bMinusculas" title="Pasa a minúsculas los valores del esquema (salvo Name) de lo seleccionado">Pasar a minúsculas</button>
+          </span>
+        </div>
+        <span class="barra-acciones">
+          <button type="button" class="enlace" id="eColumna" title="Añade una etiqueta nueva como columna">+ columna</button>
+          <span class="pendientes" id="ePendientes"></span>
+          <button type="button" class="secundario" id="eDescartar" hidden>Descartar cambios</button>
+          <button type="button" class="primario" id="eRevisar" disabled>Revisar cambios</button>
+        </span>
+      </div>
+
+      <div class="tabla-caja" id="eCaja">
+        <table class="hoja" id="eTabla"><thead id="eCabeza"></thead><tbody id="eCuerpo"></tbody></table>
+      </div>
+      <div class="paginacion" id="ePaginas"></div>
+    </div>
+    <datalist id="dlClaves"></datalist>
+    <div id="eListas" hidden></div>
+  </section>
+
+  <!-- ============================================================ Historial -->
+  <section class="vista" id="vHistorial" hidden>
+    <header class="cab">
+      <div><h1>Historial</h1><p>Cada «Aplicar» guarda qué tenía y qué tiene cada etiqueta que tocó. «Deshacer este lote» lo revisa contra AWS antes, igual que un cambio normal.</p></div>
+    </header>
+    <div class="lotes" id="hLotes"></div>
+  </section>
+
+  <!-- ============================================================ Ajustes -->
+  <section class="vista" id="vAjustes" hidden>
+    <header class="cab">
+      <div><h1>Ajustes</h1><p class="una-linea">En <code id="aFichero">~/.xsoft/tagsx_config.py</code>, el mismo que usa la terminal.</p></div>
+    </header>
+    <div class="aviso" id="aAviso" hidden></div>
+
+    <section class="tarjeta">
+      <h2>Perfil de AWS</h2>
+      <div class="fila3">
+        <label class="campo">Perfil<select id="aPerfil"></select></label>
+        <div class="campo probar"><span>&nbsp;</span><div><button type="button" class="secundario" id="aProbar">Probar</button><span class="probar-res" id="aProbarRes"></span></div></div>
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Regiones</h2>
+      <p class="ayuda">Las que se leen. Lo global (IAM, CloudFront, Route 53) se lee y se etiqueta siempre en <code>us-east-1</code>, aunque no la marques.</p>
+      <div class="chips-sel" id="aRegiones"></div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Servicios con escáner propio</h2>
+      <p class="ayuda">Además de lo que ya tiene etiquetas, estos se recorren con su propia API para ver también lo nunca etiquetado. <button type="button" class="enlace" id="aServTodos">Todos</button> · <button type="button" class="enlace" id="aServNinguno">Ninguno</button></p>
+      <div class="servicios" id="aServicios"></div>
+      <p class="ayuda nota" id="aNoDetectables"></p>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Esquema y catálogos</h2>
+      <p class="ayuda">Las etiquetas del esquema son las columnas fijas de la tabla (y del Excel). El catálogo son los valores conocidos: se sugieren al escribir y lo de fuera solo avisa.</p>
+      <table class="tabla esquema"><colgroup><col class="c-clave"><col><col class="c-mover"></colgroup>
+        <thead><tr><th>Etiqueta</th><th>Catálogo (separado por comas)</th><th></th></tr></thead>
+        <tbody id="aEsquema"></tbody></table>
+      <button type="button" class="enlace" id="aEtiquetaNueva">+ etiqueta</button>
+      <label class="check"><input type="checkbox" id="aMinusculas"><span>Valores del esquema en minúscula (salvo Name): la web avisa, la terminal los pasa a minúscula</span></label>
+    </section>
+
+    <div class="errores" id="aErrores" hidden></div>
+    <div class="acciones"><button type="button" class="primario" id="aGuardar">Guardar</button><span class="estado" id="aEstado"></span></div>
+  </section>
+</main>
+
+<div class="modal-fondo" id="modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true">
+    <button type="button" class="modal-cerrar" id="modalCerrar" aria-label="Cerrar">✕</button>
+    <div id="modalCuerpo"></div>
+  </div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="{{ url_for('static', filename='comun.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='etiquetas.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='historial.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='ajustes.js', v=version) }}"></script>
+</body>
+</html>

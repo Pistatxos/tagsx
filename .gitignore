@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Datos de AWS: nunca al repo
+exports/
+aws_inventory*.csv
+aws_inventory*.xlsx
+tagsx_*.csv
+snapshot.json
+historial.jsonl
+
+# Local
+.DS_Store
+.claude/
+.vscode/
+.idea/
+*.bak
+*.tmp
+.python-version
